@@ -13,11 +13,11 @@ local module = {}
 
 -- PLAYER SPECIFIC {
 
-function newPlayer()
+function newPlayer(x, y)
     local _player = {}
     _player.type = 'player'
-    _player.x = 800
-    _player.y = 0
+    _player.x = x or 0
+    _player.y = y or 0
 
     _player.maxVelocityX = config.PLAYER_VELOCITY
     _player.velocityX = 0
@@ -129,16 +129,6 @@ function controlPlayer()
 end
 
 function updatePlayer(dt)
-    -- if player.attackState == 'start' and player.animation.finished then
-    --     player.attackState = 'end'
-    -- end
-    -- if player.attackState == 'end' and player.animation.finished then
-    --     player.attackState = false
-    -- end
-    -- if player.attackRefreshingTimer > 0 then
-    --     player.attackRefreshingTimer = player.attackRefreshingTimer - dt
-    -- end
-
     controlPlayer()
     applyGravity(player, dt)
     moveObject(player, dt)
@@ -191,6 +181,7 @@ function newVegetable(x, y, type)
     _vegetable.animations = {}
     _vegetable.animations['idle'] = animation.new(_vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {1, 2, 3, 4}, true)
     _vegetable.animations['run'] = animation.new(_vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true)
+    _vegetable.animations['run_for_your_life'] = animation.new(_vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true)
     _vegetable.animations['death'] = animation.new(_vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {11, 12, 13, 14, 15, 15, 15}, true, false)
     _vegetable.animation = _vegetable.animations['idle']
     _vegetable.sx = config.DEFAULT_SCALE
@@ -237,6 +228,8 @@ function controlVegetable(v, dt)
             v.dead = true
             player.attackState = 'end'
         end
+    elseif v.state == 'run_for_your_life' then
+        v.velocityX = config.VEGETABLE_VELOCITY * 4 * utils.signum(v.x - player.x)
     end
 
     if not (v.velocityX == 0) then
@@ -349,15 +342,26 @@ end
 
 function module.load()
     map, world = newWorld()
-    player = newPlayer()
+
+    playerSpawn = {}
+    vegetableSpawns = {}
+    for k, object in pairs(map.objects) do
+        if object.name == "player" then
+            playerSpawn = object
+        else
+            for i, type in ipairs(config.VEGETABLE_TYPES) do
+                if object.name == type then
+                    vegetableSpawns[type] = object
+                end
+            end
+        end
+    end
+    player = newPlayer(playerSpawn.x, playerSpawn.y)
+
     back = love.graphics.newImage('assets/back.png')
 
-    for i = 1, 1 do
-        local type = config.VEGETABLE_TYPES[love.math.random(1, #config.VEGETABLE_TYPES)]
-        local _vegetable = newVegetable(love.math.random(10, 800), nil, type)
-        vegetables[i] = _vegetable
-        world:add(_vegetable, _vegetable.x, _vegetable.y,  _vegetable.width * _vegetable.sx, _vegetable.height * _vegetable.sy)
-    end
+    spawnTimer = 0
+    spawnVegetables()
 
     world:add(player, player.x, player.y, player.width * player.sx, player.height * player.sy)
 end
@@ -367,6 +371,35 @@ function seesPlayerFilter(item)
         return 'slide'
     end
     return false
+end
+
+function spawnVegetables()
+    if spawnTimer <= 0 then
+        print(#vegetables)
+        if #vegetables <= config.MAX_VEGETABLES then
+            for i = 1, #config.VEGETABLE_TYPES do
+                local type = config.VEGETABLE_TYPES[i]
+                for i = 1, config.SPAWN_COUNT do
+                    local _vegetable = newVegetable(vegetableSpawns[type].x, vegetableSpawns[type].y, type)
+                    table.insert(vegetables, _vegetable)
+                    world:add(_vegetable, _vegetable.x, _vegetable.y,  _vegetable.width * _vegetable.sx, _vegetable.height * _vegetable.sy)
+                end
+            end
+        end
+        print(#vegetables)
+
+        spawnTimer = config.SPAWN_RATE
+    end
+end
+
+function removeCorpses()
+    local newVegetables = {}
+    for i, v in ipairs(vegetables) do
+        if not v.dead and v.y <= map.height * map.tileheight then
+            table.insert(newVegetables, v)
+        end
+    end
+    vegetables = newVegetables
 end
 
 function module.update(dt)
@@ -381,35 +414,25 @@ function module.update(dt)
             if v.sx < 0 then
                 seeX = player.x - v.x < 0
             end
-            if playerYs[1] >= vegYs[1] - 1 and playerYs[3] <= vegYs[3] + 1 and seeX then
+            if playerYs[1] >= vegYs[1] - 1 and playerYs[3] <= vegYs[3] + 1 and seeX and not player.stealthState then
                 local sees = utils.ray(
                     map,
                     world,
                     {x = v.x + v.width * 0.5, y = vegYs[1]},
                     {x = player.x + player.width * 0.5, y = playerYs[1]}
                 )
-
-                -- sees = sees or utils.ray(
-                --     map,
-                --     world,
-                --     {x = v.x + v.width * 0.5, y = vegYs[2]},
-                --     {x = player.x + player.width * 0.5, y = playerYs[2]}
-                -- )
-
-                -- sees = sees or utils.ray(
-                --     map,
-                --     world,
-                --     {x = v.x + v.width * 0.5, y = vegYs[3]},
-                --     {x = player.x + player.width * 0.5, y = playerYs[3]}
-                -- ) 
-                print(sees)
+                setStateVegetable(v, 'run_for_your_life')
             else
-                print(false)
+                -- print(false)
             end
         end
     end
     resolveAttack(dt)
     positionCamera(player, camera)
+
+    spawnTimer = spawnTimer - dt
+    removeCorpses()
+    spawnVegetables()
 end
 
 function module.draw()

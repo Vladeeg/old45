@@ -10,8 +10,12 @@ config.VEGETABLE_VELOCITY = 50
 
 config.VEGETABLE_TYPES = {
     'carrot',
-    'kartoha',
-    'pomidor'
+    'potato',
+    'tomat'
 }
+
+config.SPAWN_RATE = 10
+config.SPAWN_COUNT = 3
+config.MAX_VEGETABLES = 10
 
 return config
