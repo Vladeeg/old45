@@ -1,0 +1,7 @@
+[submodule "libs/sti"]
+	path = libs/sti
+	url = https://github.com/karai17/Simple-Tiled-Implementation
+
+[submodule "libs/bump"]
+	path = libs/bump
+	url = https://github.com/kikito/bump.lua
