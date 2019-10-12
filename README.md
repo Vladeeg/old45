@@ -5,7 +5,7 @@
 ### Windows
 
 Just pull the archive with executable from [releases](https://github.com/Vladeeg/old45/releases/tag/v1.0.0),
-unpack it, and fire the game.
+unpack it, and fire up the game.
 
 ### Linux
 
