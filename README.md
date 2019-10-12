@@ -13,15 +13,18 @@ unpack it, and fire the game.
 2. Pull the source code
 3. Run `love /path/to/the/source/code` from terminal
 
-## How to play:
+## How to play
 
-In mainmenu:
-Press space to start the game
+### In mainmenu
 
-On killing trip:
-Use arrows to run and jump
-Use Z to stab a vegetable
-Use X to toggle stealth mode
+* Press space to start the game
 
-On cooking table:
-Press space to hit the vegetable
+### On killing trip
+
+* Use arrows to run and jump
+* Use Z to stab a vegetable
+* Use X to toggle stealth mode
+
+### On cooking table
+
+* Press space to hit the vegetable
