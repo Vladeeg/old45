@@ -12,3 +12,16 @@ unpack it, and fire the game.
 1. Install [löve](https://www.love2d.org) in your system
 2. Pull the source code
 3. Run `love /path/to/the/source/code` from terminal
+
+## How to play:
+
+In mainmenu:
+Press space to start the game
+
+On killing trip:
+Use arrows to run and jump
+Use Z to stab a vegetable
+Use X to toggle stealth mode
+
+On cooking table:
+Press space to hit the vegetable
