@@ -18,7 +18,7 @@ function animationModule.update(animation, dt)
     end
 end
 
-function animationModule.draw(animation, x, y, r, sx, sy)
+function animationModule.draw(animation, x, y, r, sx, sy, ox, oy)
     local frameNum = math.floor(animation.currentTime / animation.duration * #animation.frames) + 1
     local spriteNum = animation.frames[frameNum]
     local quad = animation.quads[spriteNum]
@@ -27,7 +27,13 @@ function animationModule.draw(animation, x, y, r, sx, sy)
     if animation.flip then
         flipMultiplier = -1
     end 
-    love.graphics.draw(animation.spriteSheet, quad, x, y, r, flipMultiplier * sx, sy, width * 0.5, oy, kx, ky)
+
+    r = r or 0
+    sx = sx or 1
+    sy = sy or 1
+    ox = ox or width * 0.5
+    oy = oy or 0
+    love.graphics.draw(animation.spriteSheet, quad, x, y, r, flipMultiplier * sx, sy, ox, oy, kx, ky)
 end
 
 function animationModule.new(image, width, height, frameDuration, frames, flip, repeatable)

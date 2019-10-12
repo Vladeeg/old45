@@ -6,9 +6,6 @@ local sti = require 'libs.sti.sti'
 local config = require 'conf'
 local utils = require 'utils'
 
-local player = nil
-local vegetables = {}
-
 local module = {}
 
 -- PLAYER SPECIFIC {
@@ -55,7 +52,7 @@ function newPlayer(x, y)
     return _player
 end
 
-function controlPlayer()
+function controlPlayer(level, player)
     if not player.attackState and not player.stealthState then
         if love.keyboard.isDown('left') then
             player.velocityX = -player.maxVelocityX
@@ -104,8 +101,23 @@ function controlPlayer()
 
     elseif player.attackState == 'end' then
         player.animation = player.animations['attack_end']
-        if player.animation.finished then player.attackState = false end
-
+        if player.animation.finished then
+            player.attackState = false
+            local completed = 0
+            print(table.tostring(level.killedKinds) .. '\n')
+            for i, killed in ipairs(level.killedKinds) do
+                for j, needed in ipairs(level.neededKinds) do
+                    if killed == needed then
+                        completed = completed + 1
+                    end
+                end
+            end
+            print(completed .. ' ' .. #level.neededKinds .. '\n')
+            if completed >= #level.neededKinds then
+                print('asdkfhaskdj')
+                level.win = true
+            end
+        end
     elseif player.stealthState == 'activating' then
         player.animation = player.animations['stealth_activation']
         if player.animation.finished then player.stealthState = 'active' end
@@ -128,22 +140,22 @@ function controlPlayer()
     end
 end
 
-function updatePlayer(dt)
-    controlPlayer()
+function updatePlayer(level, player, dt)
+    controlPlayer(level, player)
     applyGravity(player, dt)
-    moveObject(player, dt)
+    moveObject(level.world, player, dt)
     animation.update(player.animation, dt)
 end
 
 -- } PLAYER SPECIFIC
 
-function resolveAttack(dt)
-    if player.attackState == 'attacking' then
-        local goalX = player.x + player.velocityX * dt
-        local goalY = player.y + player.velocityY * dt
+function resolveAttack(level, dt)
+    if level.player.attackState == 'attacking' then
+        local goalX = level.player.x + level.player.velocityX * dt
+        local goalY = level.player.y + level.player.velocityY * dt
 
         local actualX, actualY, collisions, len =
-            world:check(player, goalX, goalY)
+        level.world:check(level.player, goalX, goalY)
         for i, coll in ipairs(collisions) do
             if coll.other.type == 'vegetable' then
                 if not coll.other.dead then
@@ -152,7 +164,7 @@ function resolveAttack(dt)
                 end
             end
         end
-        player.attackState = 'end'
+        level.player.attackState = 'end'
     end
 end
 -- VEGETABLE SPECIFIC {
@@ -162,6 +174,7 @@ function newVegetable(x, y, type)
     _vegetable.type = 'vegetable'
     _vegetable.x = x or 0
     _vegetable.y = y or 0
+    _vegetable.kind = type
 
     _vegetable.maxVelocityX = config.VEGETABLE_VELOCITY
     _vegetable.velocityX = 0
@@ -201,7 +214,7 @@ function setStateVegetable(v, state)
     end
 end
 
-function controlVegetable(v, dt)
+function controlVegetable(level, v, dt)
     if v.state == 'idle' then
         if v.idleTimer <= 0 then
             v.runTimer = love.math.random(5, 7)
@@ -226,10 +239,10 @@ function controlVegetable(v, dt)
     elseif v.state == 'death' then
         if v.animations['death'].finished then
             v.dead = true
-            player.attackState = 'end'
+            level.player.attackState = 'end'
         end
     elseif v.state == 'run_for_your_life' then
-        v.velocityX = config.VEGETABLE_VELOCITY * 4 * utils.signum(v.x - player.x)
+        v.velocityX = config.VEGETABLE_VELOCITY * 4 * utils.signum(v.x - level.player.x)
     end
 
     if not (v.velocityX == 0) then
@@ -248,10 +261,11 @@ function controlVegetable(v, dt)
     end
 end
 
-function updateVegetable(v, dt)
-    controlVegetable(v, dt)
+function updateVegetable(level, v, dt)
+    controlVegetable(level, v, dt)
     applyGravity(v, dt)
-    moveObject(v, dt)
+    print(level)
+    moveObject(level.world, v, dt)
     animation.update(v.animation, dt)
 end
 
@@ -285,7 +299,7 @@ function collisionFilter(object, other)
     return 'slide'
 end
 
-function moveObject(object, dt)
+function moveObject(world, object, dt)
     local goalX = object.x + object.velocityX * dt
     local goalY = object.y + object.velocityY * dt
 
@@ -319,12 +333,15 @@ function drawWorld()
 end
 
 
-function positionCamera(player, camera)
+function positionCamera(player, map)
     local mapWidth = map.width * map.tilewidth
     local mapHeight = map.height * map.tileheight
     local halfScreenWidth = love.graphics.getWidth() / 2
     local halfScreenHeight = love.graphics.getHeight() / 2
   
+    local boundX = 0
+    local boundY = 0
+
     if player.x < (mapWidth - halfScreenWidth) then
         boundX = math.max(0, player.x - halfScreenWidth)
     else
@@ -340,30 +357,43 @@ function positionCamera(player, camera)
     camera:setPosition(boundX, boundY)
 end
 
-function module.load()
-    map, world = newWorld()
+function module.new(neededKinds)
+    local level = {}
+    level.player = nil
+    level.vegetables = {}
+    level.neededKinds = neededKinds
+    level.killedKinds = { }
+    level.win = false
+    level.map, level.world = newWorld()
 
-    playerSpawn = {}
-    vegetableSpawns = {}
-    for k, object in pairs(map.objects) do
+    level.playerSpawn = {}
+    level.vegetableSpawns = {}
+    for k, object in pairs(level.map.objects) do
         if object.name == "player" then
-            playerSpawn = object
+            level.playerSpawn = object
         else
             for i, type in ipairs(config.VEGETABLE_TYPES) do
                 if object.name == type then
-                    vegetableSpawns[type] = object
+                    level.vegetableSpawns[type] = object
                 end
             end
         end
     end
-    player = newPlayer(playerSpawn.x, playerSpawn.y)
+    level.player = newPlayer(level.playerSpawn.x, level.playerSpawn.y)
 
-    back = love.graphics.newImage('assets/back.png')
+    level.back = love.graphics.newImage('assets/back.png')
 
-    spawnTimer = 0
-    spawnVegetables()
+    level.spawnTimer = 0
+    spawnVegetables(level)
 
-    world:add(player, player.x, player.y, player.width * player.sx, player.height * player.sy)
+    level.world:add(
+        level.player,
+        level.player.x,
+        level.player.y,
+        level.player.width * level.player.sx,
+        level.player.height * level.player.sy
+    )
+    return level
 end
 
 function seesPlayerFilter(item)
@@ -373,53 +403,66 @@ function seesPlayerFilter(item)
     return false
 end
 
-function spawnVegetables()
-    if spawnTimer <= 0 then
-        print(#vegetables)
-        if #vegetables <= config.MAX_VEGETABLES then
+function spawnVegetables(level)
+    if level.spawnTimer <= 0 then
+        print(#level.vegetables)
+        if #level.vegetables <= config.MAX_VEGETABLES then
             for i = 1, #config.VEGETABLE_TYPES do
                 local type = config.VEGETABLE_TYPES[i]
                 for i = 1, config.SPAWN_COUNT do
-                    local _vegetable = newVegetable(vegetableSpawns[type].x, vegetableSpawns[type].y, type)
-                    table.insert(vegetables, _vegetable)
-                    world:add(_vegetable, _vegetable.x, _vegetable.y,  _vegetable.width * _vegetable.sx, _vegetable.height * _vegetable.sy)
+                    local _vegetable = newVegetable(
+                        level.vegetableSpawns[type].x,
+                        level.vegetableSpawns[type].y,
+                        type
+                    )
+                    table.insert(level.vegetables, _vegetable)
+                    level.world:add(_vegetable, _vegetable.x, _vegetable.y,  _vegetable.width * _vegetable.sx, _vegetable.height * _vegetable.sy)
                 end
             end
         end
-        print(#vegetables)
+        print(#level.vegetables)
 
-        spawnTimer = config.SPAWN_RATE
+        level.spawnTimer = config.SPAWN_RATE
     end
 end
 
-function removeCorpses()
+function removeCorpses(level)
     local newVegetables = {}
-    for i, v in ipairs(vegetables) do
-        if not v.dead and v.y <= map.height * map.tileheight then
+    for i, v in ipairs(level.vegetables) do
+        if not v.dead and v.y <= level.map.height * level.map.tileheight then
             table.insert(newVegetables, v)
         end
     end
-    vegetables = newVegetables
+    level.vegetables = newVegetables
 end
 
-function module.update(dt)
-    map:update(dt)
-    updatePlayer(dt)
-    for i, v in ipairs(vegetables) do
-        if not v.dead then 
-            updateVegetable(v, dt)
+function module.update(level, dt)
+    level.map:update(dt)
+    updatePlayer(level, level.player, dt)
+
+    if level.player.y > level.map.height * level.map.tileheight then
+        level.lose = true
+    end
+
+    for i, v in ipairs(level.vegetables) do
+        if not v.dead then
+            updateVegetable(level, v, dt)
             local vegYs = {v.y, v.y + v.height * 0.5, v.y + v.height * 0.99}
-            local playerYs = {player.y, player.y + player.height * 0.5, player.y + player.height * 0.99}
-            local seeX = player.x - v.x > 0
+            local playerYs = {
+                level.player.y,
+                level.player.y + level.player.height * 0.5,
+                level.player.y + level.player.height * 0.99
+            }
+            local seeX = level.player.x - v.x > 0
             if v.sx < 0 then
-                seeX = player.x - v.x < 0
+                seeX = level.player.x - v.x < 0
             end
-            if playerYs[1] >= vegYs[1] - 1 and playerYs[3] <= vegYs[3] + 1 and seeX and not player.stealthState then
+            if playerYs[1] >= vegYs[1] - 1 and playerYs[3] <= vegYs[3] + 1 and seeX and not level.player.stealthState then
                 local sees = utils.ray(
-                    map,
-                    world,
+                    level.map,
+                    level.world,
                     {x = v.x + v.width * 0.5, y = vegYs[1]},
-                    {x = player.x + player.width * 0.5, y = playerYs[1]}
+                    {x = level.player.x + level.player.width * 0.5, y = playerYs[1]}
                 )
                 setStateVegetable(v, 'run_for_your_life')
             else
@@ -427,25 +470,31 @@ function module.update(dt)
             end
         end
     end
-    resolveAttack(dt)
-    positionCamera(player, camera)
+    resolveAttack(level, dt)
+    positionCamera(level.player, level.map)
 
-    spawnTimer = spawnTimer - dt
-    removeCorpses()
-    spawnVegetables()
+    level.spawnTimer = level.spawnTimer - dt
+
+    for i, v in ipairs(level.vegetables) do
+        if v.dead and not utils.contains(level.killedKinds, v.kind) then
+            table.insert(level.killedKinds, v.kind)
+        end
+    end
+    removeCorpses(level)
+    spawnVegetables(level)
 end
 
-function module.draw()
+function module.draw(level)
     camera:set()
-    love.graphics.draw(back, camera.x, camera.y)
-    map:draw(-camera.x, -camera.y)
+    love.graphics.draw(level.back, camera.x, camera.y)
+    level.map:draw(-camera.x, -camera.y)
 
-    if not player.attackState then
-        utils.drawAnimatedObject(player)
-    elseif player.attackState == 'start' or player.attackState == 'end' then
-        utils.drawAnimatedObject(player)
+    if not level.player.attackState then
+        utils.drawAnimatedObject(level.player)
+    elseif level.player.attackState == 'start' or level.player.attackState == 'end' then
+        utils.drawAnimatedObject(level.player)
     end
-    for i, v in ipairs(vegetables) do
+    for i, v in ipairs(level.vegetables) do
         if not v.dead then utils.drawAnimatedObject(v) end
     end
     camera:unset()

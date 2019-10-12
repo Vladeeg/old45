@@ -1,18 +1,27 @@
 local animation = require 'animation.animation'
 
-local module = {}
+local module3 = {}
 
-function module.drawAnimatedObject(object)
+function module3.drawAnimatedObject(object)
     animation.draw(object.animation, object.x, object.y, 0, object.sx, object.sy)
 end
 
-function module.signum(x)
+function module3.signum(x)
     if x == 0 then return 0 end
     if x > 0 then
         return 1
     else
         return -1
     end
+end
+
+function module3.contains(t, value)
+    for i, v in ipairs(t) do
+        if v == value then
+            return true
+        end
+    end
+    return false
 end
 
 function table.val_to_str(v)
@@ -46,7 +55,7 @@ function table.tostring(tbl)
     return "{" .. table.concat(result, ",") .. "}"
 end
 
-function module.ray(map, world, start, _end, filter, resolution)
+function module3.ray(map, world, start, _end, filter, resolution)
     local resolution = resolution or 1
     local step = map.tilewidth
 
@@ -85,4 +94,4 @@ function module.ray(map, world, start, _end, filter, resolution)
     return true;
 end
 
-return module
+return module3
