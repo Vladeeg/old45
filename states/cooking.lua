@@ -39,7 +39,7 @@ function module.update(level, dt)
 end
 
 function module.draw(level)
-    animation.draw(level.game.animation, 400)
+    animation.draw(level.game.animation)
 end
 
 return module

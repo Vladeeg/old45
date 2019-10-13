@@ -25,7 +25,7 @@ function module.new(x, y)
     player.jumpSpeed = 300
     player.isGrounded = false
 
-    player.width = 21
+    player.width = 30
     player.height = 60
 
     player.attacking = false
@@ -37,17 +37,18 @@ function module.new(x, y)
     player.spriteSheet = love.graphics.newImage(config.PLAYER_SPRITESHEET.image)
     local spriteWidth = config.PLAYER_SPRITESHEET.width
     local spriteHeight = config.PLAYER_SPRITESHEET.height
+    local offsetX = (spriteWidth - player.width) * 0.5
 
     player.animations = {}
-    player.animations['idle'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {1, 2, 3, 4, 5, 6}, true)
-    player.animations['run'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {7, 8, 9, 10, 11, 12}, true)
-    player.animations['stealth_activation'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {13, 14, 15, 16, 17}, true, false)
-    player.animations['stealth_deactivation'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {17, 16, 15, 14, 13}, true, false)
-    player.animations['mask'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {18, 19, 20, 21}, true)
-    player.animations['attack_start'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {13, 14, 15, 16, 17}, true, false)
-    player.animations['attack'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.25, {18, 19, 20, 21}, true, false)
-    player.animations['attack_end'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {17, 16, 15, 14, 13}, true, false)
-    player.animations['jump'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {22, 23, 24}, true, false)
+    player.animations['idle'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {1, 2, 3, 4, 5, 6}, true, true, offsetX)
+    player.animations['run'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {7, 8, 9, 10, 11, 12}, true, true, offsetX)
+    player.animations['stealth_activation'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {13, 14, 15, 16, 17}, true, false, offsetX)
+    player.animations['stealth_deactivation'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {17, 16, 15, 14, 13}, true, false, offsetX)
+    player.animations['mask'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {18, 19, 20, 21}, true, nil, offsetX)
+    player.animations['attack_start'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {13, 14, 15, 16, 17}, true, false, offsetX)
+    player.animations['attack'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.25, {18, 19, 20, 21}, true, false, offsetX)
+    player.animations['attack_end'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {17, 16, 15, 14, 13}, true, false, offsetX)
+    player.animations['jump'] = animation.new(player.spriteSheet, spriteWidth, spriteHeight, 0.1, {22, 23, 24}, true, false, offsetX)
 
     player.animation = player.animations['idle']
 

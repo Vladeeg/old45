@@ -394,7 +394,9 @@ function module.draw(level)
         utils.drawAnimatedObject(level.player)
     end
     for i, v in ipairs(level.vegetables) do
-        if not v.dead then utils.drawAnimatedObject(v) end
+        if not v.dead then
+            utils.drawAnimatedObject(v)
+        end
     end
 
     Camera.unset(level.camera)

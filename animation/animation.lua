@@ -23,24 +23,27 @@ function animationModule.draw(animation, x, y, r, sx, sy, ox, oy)
     local spriteNum = animation.frames[frameNum]
     local quad = animation.quads[spriteNum]
     local _, _, width, _ = quad:getViewport()
-    local flipMultiplier = 1
-    if animation.flip then
-        flipMultiplier = -1
-    end 
+    local flipMultiplier = animation.flip and -1 or 1
 
     r = r or 0
-    sx = sx or 1
-    sy = sy or 1
-    ox = ox or width * 0.5
-    oy = oy or 0
-    love.graphics.draw(animation.spriteSheet, quad, x, y, r, flipMultiplier * sx, sy, ox, oy, kx, ky)
+    local sx = flipMultiplier * (sx or 1)
+    local sy = sy or 1
+
+    local ox = (sx < 0 and -sx * width - animation.offset.x or animation.offset.x) + (ox or 0)
+    local oy = (sy < 0 and -sy * height - animation.offset.y or animation.offset.y) + (oy or 0)
+    love.graphics.draw(animation.spriteSheet, quad, x, y, r, sx, sy, ox, oy, kx, ky)
 end
 
-function animationModule.new(image, width, height, frameDuration, frames, flip, repeatable)
+function animationModule.new(image, width, height, frameDuration, frames, flip, repeatable, offsetX, offsetY)
     local animation = {}
     animation.spriteSheet = image
     animation.quads = {}
     animation.flip = flip
+    
+    animation.offset = {}
+    animation.offset.x = offsetX or 0
+    animation.offset.y = offsetY or 0
+    
     animation.repeatable = true
     if repeatable == false then
         animation.repeatable = false

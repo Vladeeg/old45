@@ -29,10 +29,13 @@ function module.new(x, y, type)
 
     vegetable.spriteSheet = love.graphics.newImage('assets/' .. type .. '.png')
     vegetable.animations = {}
-    vegetable.animations['idle'] = animation.new(vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {1, 2, 3, 4}, true)
-    vegetable.animations['run'] = animation.new(vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true)
-    vegetable.animations['run_for_your_life'] = animation.new(vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true)
-    vegetable.animations['death'] = animation.new(vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {11, 12, 13, 14, 15, 15, 15}, true, false)
+    local spriteWidth = config.SPRITE_WIDTH
+    local offsetX = (spriteWidth - vegetable.width) * 0.5
+
+    vegetable.animations['idle'] = animation.new(vegetable.spriteSheet, spriteWidth, config.SPRITE_HEIGHT, 0.1, {1, 2, 3, 4}, true, nil, offsetX)
+    vegetable.animations['run'] = animation.new(vegetable.spriteSheet, spriteWidth, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true, nil, offsetX)
+    vegetable.animations['run_for_your_life'] = animation.new(vegetable.spriteSheet, spriteWidth, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true, nil, offsetX)
+    vegetable.animations['death'] = animation.new(vegetable.spriteSheet, spriteWidth, config.SPRITE_HEIGHT, 0.1, {11, 12, 13, 14, 15, 15, 15}, true, false, offsetX)
     vegetable.animation = vegetable.animations['idle']
     vegetable.sx = 1
     vegetable.sy = 1
