@@ -34,8 +34,8 @@ function module.new(x, y, type)
     vegetable.animations['run_for_your_life'] = animation.new(vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true)
     vegetable.animations['death'] = animation.new(vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {11, 12, 13, 14, 15, 15, 15}, true, false)
     vegetable.animation = vegetable.animations['idle']
-    vegetable.sx = config.DEFAULT_SCALE
-    vegetable.sy = config.DEFAULT_SCALE
+    vegetable.sx = 1
+    vegetable.sy = 1
 
     return vegetable
 end

@@ -51,8 +51,8 @@ function module.new(x, y)
 
     player.animation = player.animations['idle']
 
-    player.sx = config.DEFAULT_SCALE
-    player.sy = config.DEFAULT_SCALE
+    player.sx = 1
+    player.sy = 1
 
     return player
 end

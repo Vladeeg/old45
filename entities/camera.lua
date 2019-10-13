@@ -30,6 +30,7 @@ end
 
 function module.set(camera)
     love.graphics.push()
+    love.graphics.scale(camera.scale, camera.scale)
     love.graphics.translate(-camera.x, -camera.y)
 end
 
@@ -38,8 +39,8 @@ function module.unset()
 end
 
 function module.update(camera, dt)    
-    local halfScreenWidth = camera.width / 2
-    local halfScreenHeight = camera.height / 2
+    local halfScreenWidth = 0.5 * camera.width / camera.scale
+    local halfScreenHeight = 0.5 * camera.height / camera.scale
 
     local newX = camera.target.x - halfScreenWidth
     local newY = camera.target.y - halfScreenHeight

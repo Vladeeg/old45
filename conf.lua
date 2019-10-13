@@ -18,8 +18,10 @@ config.SPAWN_RATE = 10
 config.SPAWN_COUNT = 3
 config.MAX_VEGETABLES = 10
 
-config.SCREEN_WIDTH = 800
-config.SCREEN_HEIGHT = 600
+config.FULLSCREEN_SPRITE_DIMENSIONS = {
+    width = 800,
+    height = 600
+}
 
 config.KNIFE_VELOCITY = 600
 config.WIN_OFFSET = 50
@@ -29,5 +31,11 @@ config.PLAYER_SPRITESHEET = {
     height = 64,
     image = 'assets/demon.png'
 }
+
+function love.conf(t)
+	t.title = "Funny Farm"
+	t.window.width = 800
+	t.window.height = 600
+end
 
 return config

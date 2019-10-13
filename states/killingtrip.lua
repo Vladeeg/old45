@@ -246,17 +246,10 @@ end
 function newWorld()
     local _map = sti('assets/map.lua', { 'bump' })
     local _world = bump.newWorld(32)
-    _map:resize(love.graphics.getWidth(), love.graphics.getHeight())
 
     _map:bump_init(_world)
 
     return _map, _world
-end
-
-function drawWorld()
-    -- for i, g in ipairs(ground) do
-    --     love.graphics.rectangle('fill', world:getRect(g))
-    -- end
 end
 
 function module.new(neededKinds)
@@ -393,7 +386,7 @@ function module.draw(level)
     Camera.set(level.camera)
 
     love.graphics.draw(level.back, level.camera.x, level.camera.y)
-    level.map:draw(-level.camera.x, -level.camera.y)
+    level.map:draw(-level.camera.x, -level.camera.y, level.camera.scale, level.camera.scale)
 
     if not level.player.attackState then
         utils.drawAnimatedObject(level.player)

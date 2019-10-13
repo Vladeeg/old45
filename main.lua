@@ -18,7 +18,6 @@ local levels = {
 }
 
 function love.load()
-    love.window.setMode(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
     love.graphics.setDefaultFilter('nearest', 'nearest')
 
     levels.mainmenu = Mainmenu.new()

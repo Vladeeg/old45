@@ -9,12 +9,16 @@ function newGame(type)
     local game = {}
 
     local spriteSheet = love.graphics.newImage('assets/' .. type .. '_cut.png')
+
+    local width = config.FULLSCREEN_SPRITE_DIMENSIONS.width
+    local height = config.FULLSCREEN_SPRITE_DIMENSIONS.height
+
     game.animations = {}
-    game.animations['knife'] = animation.new(spriteSheet, config.SCREEN_WIDTH, config.SCREEN_HEIGHT, 0.1, {1, 2})
-    game.animations['win'] = animation.new(spriteSheet, config.SCREEN_WIDTH, config.SCREEN_HEIGHT, 1.5, {3}, false, false)
-    game.animations['lose_right'] = animation.new(spriteSheet, config.SCREEN_WIDTH, config.SCREEN_HEIGHT, 1.5, {4}, false, false)
-    game.animations['lose_left'] = animation.new(spriteSheet, config.SCREEN_WIDTH, config.SCREEN_HEIGHT, 1.5, {5}, false, false)
-    game.animations['blink'] = animation.new(spriteSheet, config.SCREEN_WIDTH, config.SCREEN_HEIGHT, 0.1, {6, 7, 6, 6}, false, false)
+    game.animations['knife'] = animation.new(spriteSheet, width, height, 0.1, {1, 2})
+    game.animations['win'] = animation.new(spriteSheet, width, height, 1.5, {3}, false, false)
+    game.animations['lose_right'] = animation.new(spriteSheet, width, height, 1.5, {4}, false, false)
+    game.animations['lose_left'] = animation.new(spriteSheet, width, height, 1.5, {5}, false, false)
+    game.animations['blink'] = animation.new(spriteSheet, width, height, 0.1, {6, 7, 6, 6}, false, false)
 
     game.animation = game.animations['knife']
 
