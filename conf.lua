@@ -24,4 +24,10 @@ config.SCREEN_HEIGHT = 600
 config.KNIFE_VELOCITY = 600
 config.WIN_OFFSET = 50
 
+config.PLAYER_SPRITESHEET = {
+    width = 64,
+    height = 64,
+    image = 'assets/demon.png'
+}
+
 return config
