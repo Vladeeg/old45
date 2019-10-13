@@ -55,9 +55,9 @@ function love.update(dt)
     elseif currentLevel == 'cutgame' then
         Cutgame.update(levels.cutgame, dt)
         if levels.cutgame.currentState == 'cooked' then
-            print('win')
+            -- print('win')
             if killed >= 1 and killed < #neededKinds then
-                print('shouldupdate')
+                -- print('shouldupdate')
 
                 levels.cutgame = Cutgame.new(neededKinds[killed + 1])
                 currentLevel = 'cutgame'
