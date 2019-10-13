@@ -11,8 +11,8 @@ function module.new(target, width, height, scale)
     camera.width = width or love.graphics.getWidth()
     camera.height = height or love.graphics.getHeight()
 
-    camera.topLeft = {}
-    camera.bottomRight = {}
+    camera.topLeft = nil
+    camera.bottomRight = nil
     
     return camera
 end
@@ -37,27 +37,31 @@ function module.unset()
     love.graphics.pop()
 end
 
-function module.update(camera, dt)
-    local boundsWidth = camera.bottomRight.x - camera.topLeft.x
-    local boundsHeight = camera.bottomRight.y - camera.topLeft.y
+function module.update(camera, dt)    
     local halfScreenWidth = camera.width / 2
     local halfScreenHeight = camera.height / 2
-  
-    local newX = 0
-    local newY = 0
 
-    if camera.target.x < (boundsWidth - halfScreenWidth) then
-        newX = math.max(0, camera.target.x - halfScreenWidth)
-    else
-        newX = math.min(camera.target.x - halfScreenWidth, boundsWidth - camera.width)
+    local newX = camera.target.x - halfScreenWidth
+    local newY = camera.target.y - halfScreenHeight
+
+    if camera.bottomRight and camera.topLeft then
+        local boundsWidth = camera.bottomRight.x - camera.topLeft.x
+        local boundsHeight = camera.bottomRight.y - camera.topLeft.y
+
+        if camera.target.x < (boundsWidth - halfScreenWidth) then
+            newX = math.max(0, camera.target.x - halfScreenWidth)
+        else
+            newX = math.min(camera.target.x - halfScreenWidth, boundsWidth - camera.width)
+        end
+
+        if camera.target.y < (boundsHeight - halfScreenHeight) then
+            newY = math.max(0, camera.target.y - halfScreenHeight)
+        else
+            newY = math.min(camera.target.y - halfScreenHeight, boundsHeight - camera.height)
+        end
+
     end
 
-    if camera.target.y < (boundsHeight - halfScreenHeight) then
-        newY = math.max(0, camera.target.y - halfScreenHeight)
-    else
-        newY = math.min(camera.target.y - halfScreenHeight, boundsHeight - camera.height)
-    end
-  
     camera.x = newX
     camera.y = newY
 end
