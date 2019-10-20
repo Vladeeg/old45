@@ -1,0 +1,4 @@
+distribution/**
+*.love
+*.dll
+*.exe

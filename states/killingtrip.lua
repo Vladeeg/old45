@@ -1,7 +1,10 @@
 local animation = require 'animation.animation'
 local bump = require 'libs.bump.bump'
-local camera = require 'libs.camera'
 local sti = require 'libs.sti.sti'
+
+local Camera = require 'entities.camera'
+local Player = require 'entities.player'
+local Vegetable = require 'entities.vegetable'
 
 local config = require 'conf'
 local utils = require 'utils'
@@ -10,64 +13,22 @@ local module = {}
 
 -- PLAYER SPECIFIC {
 
-function newPlayer(x, y)
-    local _player = {}
-    _player.type = 'player'
-    _player.x = x or 0
-    _player.y = y or 0
-
-    _player.maxVelocityX = config.PLAYER_VELOCITY
-    _player.velocityX = 0
-
-    _player.maxVelocityY = config.GRAVITY * 8
-    _player.jumpSpeed = 300
-    _player.velocityY = 0
-    _player.isGrounded = false
-
-    _player.width = 21
-    _player.height = 60
-
-    _player.attacking = false
-    _player.attackRefreshingTimer = 0
-
-    _player.stealthState = false
-    _player.attackState = false
-
-    _player.spriteSheet = love.graphics.newImage('assets/demon.png')
-    _player.animations = {}
-    _player.animations['idle'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {1, 2, 3, 4, 5, 6}, true)
-    _player.animations['run'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {7, 8, 9, 10, 11, 12}, true)
-    _player.animations['stealth_activation'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {13, 14, 15, 16, 17}, true, false)
-    _player.animations['stealth_deactivation'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {17, 16, 15, 14, 13}, true, false)
-    _player.animations['mask'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {18, 19, 20, 21}, true)
-    _player.animations['attack_start'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {13, 14, 15, 16, 17}, true, false)
-    _player.animations['attack'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.25, {18, 19, 20, 21}, true, false)
-    _player.animations['attack_end'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {17, 16, 15, 14, 13}, true, false)
-    _player.animations['jump'] = animation.new(_player.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {22, 23, 24}, true, false)
-
-    _player.animation = _player.animations['idle']
-    _player.sx = config.DEFAULT_SCALE
-    _player.sy = config.DEFAULT_SCALE
-
-    return _player
-end
-
 function controlPlayer(level, player)
     if not player.attackState and not player.stealthState then
         if love.keyboard.isDown('left') then
-            player.velocityX = -player.maxVelocityX
+            player.velocity.x = -player.maxVelocity.x
             player.sx = -math.abs(player.sx)
         elseif love.keyboard.isDown('right') then
-            player.velocityX = player.maxVelocityX
+            player.velocity.x = player.maxVelocity.x
             player.sx = math.abs(player.sx)
         else
-            player.velocityX = 0
+            player.velocity.x = 0
         end
     end
 
     if love.keyboard.isDown('up') then
         if player.isGrounded then
-            player.velocityY = -player.jumpSpeed
+            player.velocity.y = -player.jumpSpeed
             player.isGrounded = false
             animation.reset(player.animations['jump'])
         end
@@ -81,7 +42,7 @@ function controlPlayer(level, player)
             animation.reset(player.animations['attack_end'])
             player.attackState = 'start'
         end
-        player.velocityX = 0
+        player.velocity.x = 0
     end
 
     if love.keyboard.isDown('x') then
@@ -92,7 +53,7 @@ function controlPlayer(level, player)
             animation.reset(player.animations['stealth_activation'])
             player.stealthState = 'activating'
         end
-        player.velocityX = 0
+        player.velocity.x = 0
     end
 
     if player.attackState == 'start' then
@@ -132,7 +93,7 @@ function controlPlayer(level, player)
     elseif not player.isGrounded then
         player.animation = player.animations['jump']
 
-    elseif math.abs(player.velocityX) > 0 then
+    elseif math.abs(player.velocity.x) > 0 then
         player.animation = player.animations['run']
 
     else
@@ -151,8 +112,8 @@ end
 
 function resolveAttack(level, dt)
     if level.player.attackState == 'attacking' then
-        local goalX = level.player.x + level.player.velocityX * dt
-        local goalY = level.player.y + level.player.velocityY * dt
+        local goalX = level.player.x + level.player.velocity.x * dt
+        local goalY = level.player.y + level.player.velocity.y * dt
 
         local actualX, actualY, collisions, len =
         level.world:check(level.player, goalX, goalY)
@@ -169,48 +130,14 @@ function resolveAttack(level, dt)
 end
 -- VEGETABLE SPECIFIC {
 
-function newVegetable(x, y, type)
-    local _vegetable = {}
-    _vegetable.type = 'vegetable'
-    _vegetable.x = x or 0
-    _vegetable.y = y or 0
-    _vegetable.kind = type
-
-    _vegetable.maxVelocityX = config.VEGETABLE_VELOCITY
-    _vegetable.velocityX = 0
-
-    _vegetable.maxVelocityY = config.GRAVITY * 8
-    _vegetable.velocityY = 0
-    _vegetable.isGrounded = false
-
-    _vegetable.width = 21
-    _vegetable.height = 64
-
-    _vegetable.state = 'idle'
-    _vegetable.idleTimer = love.math.random(0, 15)
-    _vegetable.runTimer = 0
-
-    _vegetable.spriteSheet = love.graphics.newImage('assets/' .. type .. '.png')
-    _vegetable.animations = {}
-    _vegetable.animations['idle'] = animation.new(_vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {1, 2, 3, 4}, true)
-    _vegetable.animations['run'] = animation.new(_vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true)
-    _vegetable.animations['run_for_your_life'] = animation.new(_vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {5, 6, 7, 8, 9, 10}, true)
-    _vegetable.animations['death'] = animation.new(_vegetable.spriteSheet, config.SPRITE_WIDTH, config.SPRITE_HEIGHT, 0.1, {11, 12, 13, 14, 15, 15, 15}, true, false)
-    _vegetable.animation = _vegetable.animations['idle']
-    _vegetable.sx = config.DEFAULT_SCALE
-    _vegetable.sy = config.DEFAULT_SCALE
-
-    return _vegetable
-end
-
 function setStateVegetable(v, state)
     v.state = state
     v.animation = v.animations[state]
 
     if state == 'death' then
-        v.velocityX = 0
+        v.velocity.x = 0
     elseif state == 'idle' then
-        v.velocityX = 0
+        v.velocity.x = 0
     end
 end
 
@@ -219,9 +146,9 @@ function controlVegetable(level, v, dt)
         if v.idleTimer <= 0 then
             v.runTimer = love.math.random(5, 7)
             if love.math.random() < 0.5 then
-                v.velocityX = math.abs(v.maxVelocityX)
+                v.velocity.x = math.abs(v.maxVelocity.x)
             else
-                v.velocityX = -math.abs(v.maxVelocityX)
+                v.velocity.x = -math.abs(v.maxVelocity.x)
             end
         else
             v.idleTimer = v.idleTimer - dt
@@ -233,7 +160,7 @@ function controlVegetable(level, v, dt)
                 setStateVegetable(v, 'idle')
             else
                 v.runTimer = love.math.random(5, 7)
-                v.velocityX = -v.velocityX
+                v.velocity.x = -v.velocity.x
             end
         end
     elseif v.state == 'death' then
@@ -242,14 +169,14 @@ function controlVegetable(level, v, dt)
             level.player.attackState = 'end'
         end
     elseif v.state == 'run_for_your_life' then
-        v.velocityX = config.VEGETABLE_VELOCITY * 4 * utils.signum(v.x - level.player.x)
+        v.velocity.x = config.VEGETABLE_VELOCITY * 4 * utils.signum(v.x - level.player.x)
     end
 
-    if not (v.velocityX == 0) then
-        v.sx = utils.signum(v.velocityX) * math.abs(v.sx)
+    if not (v.velocity.x == 0) then
+        v.sx = utils.signum(v.velocity.x) * math.abs(v.sx)
     end
 
-    if math.abs(v.velocityX) > 0 then
+    if math.abs(v.velocity.x) > 0 then
         setStateVegetable(v, 'run')
         if v.runTimer > 0 then
             v.runTimer = v.runTimer - dt
@@ -272,9 +199,9 @@ end
 -- } VEGETABLE SPECIFIC
 
 function applyGravity(object, dt)
-    object.velocityY = object.velocityY + config.GRAVITY * dt
-    if object.velocityY > object.maxVelocityY then
-        object.velocityY = object.maxVelocityY
+    object.velocity.y = object.velocity.y + config.GRAVITY * dt
+    if object.velocity.y > object.maxVelocity.y then
+        object.velocity.y = object.maxVelocity.y
     end
 end
 
@@ -300,17 +227,17 @@ function collisionFilter(object, other)
 end
 
 function moveObject(world, object, dt)
-    local goalX = object.x + object.velocityX * dt
-    local goalY = object.y + object.velocityY * dt
+    local goalX = object.x + object.velocity.x * dt
+    local goalY = object.y + object.velocity.y * dt
 
     local collisions
     object.x, object.y, collisions = world:move(object, goalX, goalY, collisionFilter)
     for i, coll in ipairs(collisions) do
         if coll.touch.y > goalY then  -- We touched below (remember that higher locations have lower y values) our intended target.
-            object.velocityY = 0
+            object.velocity.y = 0
             object.isGrounded = false
         elseif coll.normal.y < 0 then
-            object.velocityY = 0
+            object.velocity.y = 0
             object.isGrounded = true
         end
     end
@@ -319,42 +246,10 @@ end
 function newWorld()
     local _map = sti('assets/map.lua', { 'bump' })
     local _world = bump.newWorld(32)
-    _map:resize(love.graphics.getWidth(), love.graphics.getHeight())
 
     _map:bump_init(_world)
 
     return _map, _world
-end
-
-function drawWorld()
-    -- for i, g in ipairs(ground) do
-    --     love.graphics.rectangle('fill', world:getRect(g))
-    -- end
-end
-
-
-function positionCamera(player, map)
-    local mapWidth = map.width * map.tilewidth
-    local mapHeight = map.height * map.tileheight
-    local halfScreenWidth = love.graphics.getWidth() / 2
-    local halfScreenHeight = love.graphics.getHeight() / 2
-  
-    local boundX = 0
-    local boundY = 0
-
-    if player.x < (mapWidth - halfScreenWidth) then
-        boundX = math.max(0, player.x - halfScreenWidth)
-    else
-        boundX = math.min(player.x - halfScreenWidth, mapWidth - love.graphics.getWidth())
-    end
-
-    if player.y < (mapHeight - halfScreenHeight) then
-        boundY = math.max(0, player.y - halfScreenHeight)
-    else
-        boundY = math.min(player.y - halfScreenHeight, mapHeight - love.graphics.getHeight())
-    end
-  
-    camera:setPosition(boundX, boundY)
 end
 
 function module.new(neededKinds)
@@ -379,7 +274,10 @@ function module.new(neededKinds)
             end
         end
     end
-    level.player = newPlayer(level.playerSpawn.x, level.playerSpawn.y)
+    level.player = Player.new(level.playerSpawn.x, level.playerSpawn.y)
+
+    level.camera = Camera.new(level.player, love.graphics.getWidth(), love.graphics.getHeight(), config.DEFAULT_SCALE)
+    Camera.setScrollBoundsRect(level.camera, 0, 0, level.map.width * level.map.tilewidth, level.map.height * level.map.tileheight)
 
     level.back = love.graphics.newImage('assets/back.png')
 
@@ -410,7 +308,7 @@ function spawnVegetables(level)
             for i = 1, #config.VEGETABLE_TYPES do
                 local type = config.VEGETABLE_TYPES[i]
                 for i = 1, config.SPAWN_COUNT do
-                    local _vegetable = newVegetable(
+                    local _vegetable = Vegetable.new(
                         level.vegetableSpawns[type].x,
                         level.vegetableSpawns[type].y,
                         type
@@ -471,7 +369,6 @@ function module.update(level, dt)
         end
     end
     resolveAttack(level, dt)
-    positionCamera(level.player, level.map)
 
     level.spawnTimer = level.spawnTimer - dt
 
@@ -482,12 +379,14 @@ function module.update(level, dt)
     end
     removeCorpses(level)
     spawnVegetables(level)
+    Camera.update(level.camera, dt)
 end
 
 function module.draw(level)
-    camera:set()
-    love.graphics.draw(level.back, camera.x, camera.y)
-    level.map:draw(-camera.x, -camera.y)
+    Camera.set(level.camera)
+
+    love.graphics.draw(level.back, level.camera.x, level.camera.y)
+    level.map:draw(-level.camera.x, -level.camera.y, level.camera.scale, level.camera.scale)
 
     if not level.player.attackState then
         utils.drawAnimatedObject(level.player)
@@ -495,9 +394,12 @@ function module.draw(level)
         utils.drawAnimatedObject(level.player)
     end
     for i, v in ipairs(level.vegetables) do
-        if not v.dead then utils.drawAnimatedObject(v) end
+        if not v.dead then
+            utils.drawAnimatedObject(v)
+        end
     end
-    camera:unset()
+
+    Camera.unset(level.camera)
 end
 
 return module
